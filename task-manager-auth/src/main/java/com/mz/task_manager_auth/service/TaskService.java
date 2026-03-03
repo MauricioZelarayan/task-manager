@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.mz.task_manager_auth.model.Task;
+import com.mz.task_manager_auth.model.Task.TaskStatus;
 import com.mz.task_manager_auth.model.User;
 import com.mz.task_manager_auth.repository.TaskRepository;
 import com.mz.task_manager_auth.repository.UserRepository;
@@ -21,51 +22,58 @@ public class TaskService {
     }
 
     public Task createTask(Task task, String username) {
-        // 1. Fetch user from DB using the username extracted from the JWT token
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // 2. Link the user to the task
         task.setUser(user);
 
-        // 3. Force "completed" to false if it arrives as null
-        if (task.getCompleted() == null) {
-            task.setCompleted(false);
+        // If status is null, default it to PENDING
+        if (task.getStatus() == null) {
+            task.setStatus(TaskStatus.PENDING);
         }
         
-        // 4. Persist the task
         return taskRepository.save(task);
     }
 
     public List<Task> getTasksByUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         return taskRepository.findByUserId(user.getId());
     }
 
-    public Task updateTaskStatus(Long taskId, Boolean completed, String username) {
-        // Search task by its ID
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada"));
-        
-        // Ownership verification: ensure the user has permission to modify this specific task
-        if (!task.getUser().getUsername().equals(username)) {
-            throw new RuntimeException("Acceso denegado: No tienes permiso para modificar esta tarea");
-        }
-        
-        // Update and persist changes
-        task.setCompleted(completed);
-        return taskRepository.save(task);
+    public Task updateTask(Long taskId, Task taskDetails, String username) {
+    Task task = taskRepository.findById(taskId)
+            .orElseThrow(() -> new RuntimeException("Task not found"));
+    
+    // Ownership validation: verify the task belongs to the user
+    if (!task.getUser().getUsername().equals(username)) {
+        throw new RuntimeException("Access denied: You do not have permission to modify this task");
     }
+    
+    // Update basic text fields
+    task.setTitle(taskDetails.getTitle());
+    task.setDescription(taskDetails.getDescription());
+    
+    // Update task status if provided
+    if (taskDetails.getStatus() != null) {
+        task.setStatus(taskDetails.getStatus());
+    }
+
+    // Update the creation and expiration dates with the data coming from the frontend
+    task.setCreationDate(taskDetails.getCreationDate());
+    task.setExpirationDate(taskDetails.getExpirationDate());
+    
+    return taskRepository.save(task);
+}
 
     // --- DELETE TASK LOGIC ---
     public void deleteTask(Long taskId, String username) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Task not found"));
         
         // Verify ownership before deletion
         if (!task.getUser().getUsername().equals(username)) {
-            throw new RuntimeException("Acceso denegado: No tienes permiso para eliminar esta tarea");
+            throw new RuntimeException("Access denied: You do not have permission to delete this task");
         }
         
         taskRepository.delete(task);

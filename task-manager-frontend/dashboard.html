@@ -1,56 +1,249 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Task Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <style>
-        body { background-color: #f4f6f9; overflow-x: hidden; }
-        .sidebar { height: 100vh; background-color: #212529; color: white; padding-top: 20px; }
-        .task-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-radius: 10px; }
-        .task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .completed-task { opacity: 0.7; }
-        .completed-task h5 { text-decoration: line-through; color: #198754; }
+        body { background-color: #f4f6f9; overflow-x: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Modern Sidebar with Dark Gradient */
+        .sidebar { 
+            height: 100vh; 
+            background: linear-gradient(180deg, #1a1d20 0%, #212529 100%);
+            color: white; 
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 1050;
+        }
+
+        /* Task Card Styling */
+        .task-card { 
+            border: none;
+            border-radius: 12px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .task-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important; 
+        }
+
+        /* Inputs & Forms Personalization */
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15); }
+
+        /* Skeleton Loading Animation */
+        @keyframes pulse {
+            0% { background-color: #e9ecef; }
+            50% { background-color: #f8f9fa; }
+            100% { background-color: #e9ecef; }
+        }
+        .skeleton-card {
+            height: 160px;
+            border-radius: 12px;
+            background-color: #e9ecef;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        /* Sidebar Nav Links */
+        .nav-link-custom {
+            color: rgba(255,255,255,0.7);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-link-custom:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+        /* Blue Button Custom Style */
+        .btn-blue {
+            background-color: #0d6efd !important;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+            outline: none !important;
+        }
+        .btn-blue:hover, 
+        .btn-blue:focus, 
+        .btn-blue:active {
+            background-color: #0b5ed7 !important; /* Slightly darker blue */
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(13, 110, 253, 0.3);
+            outline: none !important;
+}
+
+        /* Responsive Adjustments */
+        @media (max-width: 767.98px) {
+            .sidebar { position: fixed; width: 280px; }
+            main { margin-left: 0 !important; padding-top: 20px !important; }
+        }
+
+        /* Custom styles for Modals to remove the "default" look */
+        .modal-content {
+            border: none;
+            border-radius: 20px; /* Rounded corners for a modern feel */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        /* Optional: Remove the lines between header/footer for a seamless look */
+        .modal-header, .modal-footer {
+            border: none;
+        }
+
+        /* Sidebar Search Input Styling */
+        #sidebarMenu .form-control {
+            background-color: rgba(255, 255, 255, 0.07) !important; /* Semi-transparent white */
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+        }
+
+        #sidebarMenu .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        #sidebarMenu .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            box-shadow: none;
+        }
+
+        /* Make the browser's date icon visible on dark background */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1); /* Turns the icon white */
+            opacity: 0.6;
+            cursor: pointer;
+        }
+
+        /* Dark icon for main content and modals (light background) */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0); /* Icono oscuro por defecto */
+            opacity: 0.5;
+            cursor: pointer;
+        }
+
+        #sidebarMenu .input-group-text {
+            background-color: rgba(255, 255, 255, 0.07) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
     </style>
 </head>
 <body>
+
+<nav class="navbar navbar-dark bg-dark d-md-none p-3 sticky-top">
+    <div class="container-fluid p-0">
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <span class="navbar-brand fw-bold">Task Manager</span>
+        <button class="btn btn-outline-warning btn-sm border-0" data-bs-toggle="modal" data-bs-target="#logoutModal">
+            <i class="bi bi-box-arrow-right fs-4"></i>
+        </button>
+    </div>
+</nav>
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar d-flex flex-column p-3 position-fixed">
-            <h4 class="text-center mb-4 text-light">Task Manager</h4>
-            
-            <button class="btn btn-success w-100 mb-3 fw-bold" data-bs-toggle="modal" data-bs-target="#createModal">
-                + Nueva Tarea
-            </button>
-            
-            <div class="mt-auto">
-                <button class="btn btn-secondary w-100" data-bs-toggle="modal" data-bs-target="#logoutModal">Cerrar Sesión</button>
+        <div class="col-md-3 col-lg-2 sidebar d-md-block collapse position-fixed" id="sidebarMenu">
+            <div class="d-flex flex-column h-100 p-3">
+                <h4 class="text-center mb-4 text-light d-none d-md-block fw-bold">Task Manager</h4>
+                
+                <button class="btn btn-blue w-100 mb-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="bi bi-plus-lg me-2"></i>Nueva tarea
+                </button>
+
+                <div class="mt-4 pt-4 border-top border-secondary">
+
+                    <div class="mb-3">
+                        <label for="search-input" class="small fw-bold text-light opacity-75 mb-2">Buscar</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-transparent border-secondary text-light opacity-50">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" id="search-input" class="form-control" 
+                                placeholder="Título o descripción..." 
+                                onkeydown="if(event.key === 'Enter') filterTasks()">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="search-date" class="small fw-bold text-light opacity-75 mb-2">Filtrar por fecha</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-transparent border-secondary text-light opacity-50">
+                                <i class="bi bi-calendar3"></i>
+                            </span>
+                            <input type="date" id="search-date" class="form-control" 
+                                onchange="filterTasks()">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-link btn-sm text-info text-decoration-none p-0 opacity-75" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Borrar filtros
+                    </button>
+                </div>
+                    
+                <div class="mt-auto">
+                    <button class="btn btn-link nav-link-custom w-100 border-0" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                        <i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-5">
-            <h2 class="mb-4">Mis Tareas</h2>
+        <main class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4 p-md-5">
+            <header class="mb-4">
+                <h2 class="fw-bold text-dark">Mis tareas</h2>
+                <p class="text-muted text-capitalize">Gestiona tus tareas</p>
+            </header>
+
             <div id="tasks-container" class="row g-4">
                 </div>
-        </div>
+        </main>
     </div>
 </div>
 
 <div class="modal fade" id="createModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Crear Nueva Tarea</h5>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Crear nueva tarea</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="text" id="new-title" class="form-control mb-3" placeholder="Título de la tarea">
-                <input type="date" id="new-date" class="form-control mb-3">
-                <textarea id="new-desc" class="form-control" placeholder="Descripción..." rows="3"></textarea>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Título</label>
+                    <input type="text" id="new-title" class="form-control" placeholder="Título">
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Fecha de creación</label>
+                        <input type="date" id="new-date" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Fecha de vencimiento</label>
+                        <input type="date" id="new-expiry" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descripción</label>
+                    <textarea id="new-desc" class="form-control" rows="3" placeholder="Descripción"></textarea>
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-success" onclick="createTask()">Guardar Tarea</button>
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary px-4" onclick="createTask()">Guardar tarea</button>
             </div>
         </div>
     </div>
@@ -58,24 +251,45 @@
 
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">Detalle de la Tarea</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Detalles de la tarea</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="edit-id">
-                <input type="text" id="edit-title" class="form-control mb-3 fw-bold">
-                <textarea id="edit-desc" class="form-control mb-3" rows="4"></textarea>
-                
-                <div class="form-check form-switch fs-5">
-                    <input class="form-check-input" type="checkbox" id="edit-completed">
-                    <label class="form-check-label" for="edit-completed">Marcar como Completada</label>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Título</label>
+                    <input type="text" id="edit-title" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descripción</label>
+                    <textarea id="edit-desc" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Fecha de creación</label>
+                        <input type="date" id="edit-date" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Fecha de vencimiento</label>
+                        <input type="date" id="edit-expiry" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Estado</label>
+                    <select id="edit-status" class="form-select">
+                        <option value="PENDING">Pendiente</option>
+                        <option value="COMPLETED">Completada</option>
+                        <option value="FINISHED">Finalizada</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer d-flex justify-content-between">
-                <button class="btn btn-danger" onclick="deleteTaskFromModal()">Eliminar</button>
-                <button class="btn btn-primary" onclick="updateTask()">Guardar Cambios</button>
+                <button class="btn btn-outline-danger border-0" onclick="deleteTaskFromModal()">
+                    <i class="bi bi-trash3 me-1"></i>Eliminar
+                </button>
+                <button class="btn btn-primary px-4" onclick="updateTask()">Guardar cambios</button>
             </div>
         </div>
     </div>
@@ -83,23 +297,29 @@
 
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title">Cerrar Sesión</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center fw-bold mt-2">
-                <p>¿Estás seguro que querés salir?</p>
-            </div>
-            <div class="modal-footer d-flex justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-warning" onclick="confirmLogout()">Salir</button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-box-arrow-right text-danger display-4"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Cerrar sesión</h5>
+                <p class="text-muted mb-4">Estás seguro de cerrar sesión?</p>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-danger fw-bold py-2" style="border-radius: 10px;" onclick="confirmLogout()">
+                        Sí, salir
+                    </button>
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-semibold" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
 <script src="dashboard.js"></script>
 </body>
 </html>

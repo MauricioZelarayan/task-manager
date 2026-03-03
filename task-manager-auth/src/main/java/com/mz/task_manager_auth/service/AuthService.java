@@ -24,15 +24,15 @@ public class AuthService {
     }
 
     public User register(User user) {
-        // 1. Encrypt the password
+        // Encrypt the password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
-        // 2. Assign default role if none is provided
+        // Assign default role if none is provided
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
         
-        // 3. Save user to PostgreSQL database
+        // Save user to PostgreSQL database
         return userRepository.save(user);
     }
 

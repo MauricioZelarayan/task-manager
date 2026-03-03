@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import com.mz.task_manager_auth.service.TaskService;
 
 @RestController
 @RequestMapping("/api/tasks")
+@CrossOrigin(origins = "http://127.0.0.1:5500")
 public class TaskController {
 
     private final TaskService taskService;
@@ -45,7 +47,7 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task taskDetails, Principal principal) {
         // Uses the ID from the URL, 'completed' status from the JSON, and user from the Token
-        Task updatedTask = taskService.updateTaskStatus(id, taskDetails.getCompleted(), principal.getName());
+        Task updatedTask = taskService.updateTask(id, taskDetails, principal.getName());
         return ResponseEntity.ok(updatedTask);
     }
 

@@ -22,26 +22,40 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(request -> {
-                CorsConfiguration config = new CorsConfiguration();
-                // Allow any origin for development purposes
-                config.setAllowedOrigins(List.of("*")); 
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                config.setAllowedHeaders(List.of("*"));
-                return config;
-            }))
-            .csrf(csrf -> csrf.disable()) // CSRF is not needed for stateless REST APIs
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/error").permitAll() // Public endpoints
-                .anyRequest().authenticated() // All other routes require a valid JWT
-            )
-            // Use Stateless sessions as we are using JWT tokens
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // Inject our custom JWT filter before the standard User/Password filter
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(cors -> cors.configurationSource(request -> {
+            CorsConfiguration config = new CorsConfiguration();
             
-        return http.build();
-    }
+            // Restrict origins to specific development URLs for enhanced security
+            // This replaces the wildcard "*" to prevent unauthorized cross-origin access
+            config.setAllowedOrigins(List.of(
+                "http://127.0.0.1:5500", 
+                "http://localhost:5500"
+            )); 
+            
+            // Define the HTTP methods permitted for the application's CRUD operations
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            
+            // Specify required headers for JWT authentication and JSON data processing
+            config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+            
+            // Allow the browser to include credentials (e.g., cookies or auth headers) in cross-origin requests
+            config.setAllowCredentials(true);
+            
+            return config;
+        }))
+        .csrf(csrf -> csrf.disable()) // CSRF protection is disabled as it is not needed for stateless JWT APIs
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/auth/**", "/error").permitAll() // Set authentication and error endpoints as public
+            .anyRequest().authenticated() // Ensure all other routes require a valid JWT for access
+        )
+        .sessionManagement(session -> 
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Enforce stateless sessions for JWT compliance
+        )
+        // Inject the custom JWT authentication filter before the standard UsernamePassword filter
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        
+    return http.build();
+}
 }

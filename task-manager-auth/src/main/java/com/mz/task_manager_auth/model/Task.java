@@ -1,7 +1,11 @@
 package com.mz.task_manager_auth.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,11 +35,21 @@ public class Task {
 
     private String description;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private java.time.LocalDate creationDate;
 
-    // By default, a new task is set to 'pending' (completed = false)
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.time.LocalDate expirationDate;
+
+    public enum TaskStatus { 
+    PENDING,
+    COMPLETED,
+    FINISHED
+    }
+
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Boolean completed = false;
+    private TaskStatus status = TaskStatus.PENDING;
 
     // Relational Mapping: Links the task to the user who created it
     @ManyToOne(fetch = FetchType.LAZY)

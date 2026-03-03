@@ -5,7 +5,7 @@ if (localStorage.getItem('jwtToken')) {
 }
 
 // Backend URL
-const API_URL = 'http://192.168.1.6:8080/auth';
+const API_URL = 'http://localhost:8080/auth';
 
 // UI Elements
 const authForm = document.getElementById('auth-form');

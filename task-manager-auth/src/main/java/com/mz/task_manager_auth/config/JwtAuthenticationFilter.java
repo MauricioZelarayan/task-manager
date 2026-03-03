@@ -39,24 +39,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String username;
 
-        // 1. Skip filter if no token is present or if it doesn't start with "Bearer "
+        // Skip filter if no token is present or if it doesn't start with "Bearer "
         // Spring Security will handle unauthorized access later for protected routes
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. Extract the token (removing the "Bearer " prefix - first 7 characters)
+        // Extract the token (removing the "Bearer " prefix - first 7 characters)
         jwt = authHeader.substring(7);
         
-        // 3. Extract username/subject from the JWT payload
+        // Extract username/subject from the JWT payload
         username = jwtService.extractUsername(jwt);
 
-        // 4. If user is present and not yet authenticated in the current Security Context
+        // If user is present and not yet authenticated in the current Security Context
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // 5. Validate token integrity and expiration against user details
+            // Validate token integrity and expiration against user details
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
@@ -65,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 
-                // 6. Grant access by updating the Security Context
+                // Grant access by updating the Security Context
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
